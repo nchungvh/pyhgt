@@ -27,11 +27,11 @@ graph = Graph()
 edg = graph.edge_list
 
 # type: company, tech, indeed, mag, patent = list(range(5))
-type_dict = {i: [] for i in range(2)} # dict to save nodes in the same type (key is type of node)
+type_dict = {i: [] for i in range(5)} # dict to save nodes in the same type (key is type of node)
 for node in nx_graph.nodes(data = True): 
     type_dict[node[1]['label'][0]].append(node[0])
 
-id2idx = {node:j for i in range(2) for (j,node) in enumerate(type_dict[i])} # change node_id in each type to range start from 0 ...
+id2idx = {node:j for i in range(5) for (j,node) in enumerate(type_dict[i])} # change node_id in each type to range start from 0 ...
 node2type = {}
 for (j,z) in type_dict.items():
     for i in z:
@@ -59,8 +59,8 @@ tokenizer = XLNetTokenizer.from_pretrained('xlnet-base-cased')
 model = XLNetModel.from_pretrained('xlnet-base-cased',
                                     output_hidden_states=True,
                                     output_attentions=True).to(device)
-embs = np.empty((len(type_dict[0]), 768))
-for node in type_dict[0]:
+embs = np.empty((len(type_dict[4]), 768))
+for node in type_dict[4]:
     text = 'example text to test transformers embedding' #add text:
     input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
     if len(input_ids[0]) < 4:
@@ -68,45 +68,45 @@ for node in type_dict[0]:
     all_hidden_states, all_attentions = model(input_ids)[-2:]
     rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
     embs[id2idx[node]] = rep.detach().cpu().numpy()
-graph.node_feature[0] = embs
+graph.node_feature[4] = embs
 
-# embs = np.empty((len(type_dict[2]), 768))
-# for node in type_dict[2]:
-#     text = 'example text to test transformers embedding' #add text:
-#     input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
-#     if len(input_ids[0]) < 4:
-#         continue
-#     all_hidden_states, all_attentions = model(input_ids)[-2:]
-#     rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
-#     embs[id2idx[node]] = rep.detach().cpu().numpy()
-# graph.node_feature[4] = embs
+embs = np.empty((len(type_dict[2]), 768))
+for node in type_dict[2]:
+    text = 'example text to test transformers embedding' #add text:
+    input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
+    if len(input_ids[0]) < 4:
+        continue
+    all_hidden_states, all_attentions = model(input_ids)[-2:]
+    rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
+    embs[id2idx[node]] = rep.detach().cpu().numpy()
+graph.node_feature[4] = embs
 
-for _type in range(2):
-    if _type not in [0]:
-        cv = graph.node_feature[0]
+for _type in range(5):
+    if _type not in [2,4]:
+        cv = graph.node_feature[2]
         i = []
-        for s in graph.edge_list[_type][0][0]:
-            for t in graph.edge_list[_type][0][0][s]:
+        for s in graph.edge_list[_type][2][0]:
+            for t in graph.edge_list[_type][2][0][s]:
                 i += [[s,t]]
         if len(i) == 0:
             continue
         i = np.array(i).T
         v = np.ones(i.shape[1])
         m = normalize(sp.coo_matrix((v, i), \
-            shape=(len(type_dict[_type]), len(type_dict[0]))))
+            shape=(len(type_dict[_type]), len(type_dict[2]))))
         out = m.dot(cv)
 
-        cv = graph.node_feature[0]
+        cv = graph.node_feature[4]
         i = []
-        for s in graph.edge_list[_type][0][0]:
-            for t in graph.edge_list[_type][0][0][s]:
+        for s in graph.edge_list[_type][4][0]:
+            for t in graph.edge_list[_type][4][0][s]:
                 i += [[s,t]]
         if len(i) == 0:
             continue
         i = np.array(i).T
         v = np.ones(i.shape[1])
         m = normalize(sp.coo_matrix((v, i), \
-            shape=(len(type_dict[_type]), len(type_dict[0]))))
+            shape=(len(type_dict[_type]), len(type_dict[4]))))
         out += m.dot(cv)
 
         graph.node_feature[_type] = out 
