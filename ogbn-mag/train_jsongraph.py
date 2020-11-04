@@ -54,7 +54,7 @@ parser.add_argument('--batch_size', type=int, default=128,
 parser.add_argument('--clip', type=int, default=1.0,
                     help='Gradient Norm Clipping') 
 parser.add_argument('--field', type=str, default='com',
-                    help='Field for get embeddings') 
+                    help='Field for get embeddings')
 
 parser.add_argument('--prev_norm', help='Whether to add layer-norm on the previous layers', action='store_true')
 parser.add_argument('--last_norm', help='Whether to add layer-norm on the last layers',     action='store_true')

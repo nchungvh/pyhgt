@@ -6,13 +6,14 @@ from pyHGT.utils import *
 from networkx.readwrite import json_graph
 from pyHGT.data import *
 import pymongo
+import json
 import argparse
 
 parser = argparse.ArgumentParser(description='Preprocess OAG (CS/Med/All) Data')
 '''
     Dataset arguments
 '''
-parser.add_argument('--input_graph', type=str, default='../../swiss_uni/split_data/DBpedia-G.json',
+parser.add_argument('--input_graph', type=str, default='../../swiss_uni/split_data/result_pale-G.json',
                     help='The address to store the original data directory.')
 parser.add_argument('--output_dir', type=str, default='converted_graph.pk',
                     help='The address to output the preprocessed graph.')
@@ -67,12 +68,7 @@ model = XLNetModel.from_pretrained('xlnet-base-cased',
                                     output_attentions=True).to(device)
 embs = np.empty((len(type_dict[3]), 768))
 for node in type_dict[3]:
-    try:
-        re = patent_collect.find({'_id':graph_json['nodes'][node]['id'])[0]
-    except:
-        import pdb
-        pdb.set_trace()
-    text = 'example text to test transformers embedding' #add text:
+    text = patent_collect.find({'_id':graph_json['nodes'][node]['content'][0]})[0]['abstract']
     input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
     if len(input_ids[0]) < 4:
         continue
@@ -83,7 +79,7 @@ graph.node_feature[3] = embs
 
 embs = np.empty((len(type_dict[2]), 768))
 for node in type_dict[2]:
-    text = 'example text to test transformers embedding' #add text:
+    text = indeed_collect.find({'_id':graph_json['nodes'][node]['content'][0]})[0]['jobDescription']
     input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
     if len(input_ids[0]) < 4:
         continue
