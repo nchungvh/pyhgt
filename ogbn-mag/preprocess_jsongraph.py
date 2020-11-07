@@ -8,6 +8,7 @@ from pyHGT.data import *
 import pymongo
 import json
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description='Preprocess OAG (CS/Med/All) Data')
 '''
@@ -66,27 +67,37 @@ tokenizer = XLNetTokenizer.from_pretrained('xlnet-base-cased')
 model = XLNetModel.from_pretrained('xlnet-base-cased',
                                     output_hidden_states=True,
                                     output_attentions=True).to(device)
-embs = np.empty((len(type_dict[3]), 768))
-for node in type_dict[3]:
-    text = patent_collect.find({'_id':graph_json['nodes'][node]['content'][0]})[0]['abstract']
-    input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
-    if len(input_ids[0]) < 4:
-        continue
-    all_hidden_states, all_attentions = model(input_ids)[-2:]
-    rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
-    embs[id2idx[node]] = rep.detach().cpu().numpy()
-graph.node_feature[3] = embs
+if not os.path.exists('node_feature_3.npy'):
+    embs = np.empty((len(type_dict[3]), 768))
+    for node in type_dict[3]:
+        text = patent_collect.find({'_id':graph_json['nodes'][node]['content'][0]})[0]['abstract']
+        input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
+        if len(input_ids[0]) < 4:
+            continue
+        all_hidden_states, all_attentions = model(input_ids)[-2:]
+        rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
+        embs[id2idx[node]] = rep.detach().cpu().numpy()
+    graph.node_feature[3] = embs
+    np.save('node_feature_3.npy', embs)
+else:
+    embs = np.load('node_feature_3.npy')
+    graph.node_feature[3] = embs
 
-embs = np.empty((len(type_dict[2]), 768))
-for node in type_dict[2]:
-    text = indeed_collect.find({'_id':graph_json['nodes'][node]['content'][0]})[0]['jobDescription']
-    input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
-    if len(input_ids[0]) < 4:
-        continue
-    all_hidden_states, all_attentions = model(input_ids)[-2:]
-    rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
-    embs[id2idx[node]] = rep.detach().cpu().numpy()
-graph.node_feature[2] = embs
+if not os.path.exists('node_feature_2.npy'):
+    embs = np.empty((len(type_dict[2]), 768))
+    for node in type_dict[2]:
+        text = indeed_collect.find({'_id':graph_json['nodes'][node]['content'][0]})[0]['jobDescription']
+        input_ids = torch.tensor([tokenizer.encode(text)]).to(device)[:, :64]
+        if len(input_ids[0]) < 4:
+            continue
+        all_hidden_states, all_attentions = model(input_ids)[-2:]
+        rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
+        embs[id2idx[node]] = rep.detach().cpu().numpy()
+    graph.node_feature[2] = embs
+    np.save('node_feature_2.npy', embs)
+else:
+    embs = np.load('node_feature_2.npy')
+    graph.node_feature[2] = embs
 
 for _type in range(5):
     if _type in [0,1]:
